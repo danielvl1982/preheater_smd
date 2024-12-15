@@ -252,15 +252,6 @@ void GCodeParser::parse(char *p) {
         case 'R': if (!WITHIN(motion_mode_codenum, 2, 3)) return;
       #endif
 
-      LOGICAL_AXIS_GANG(case 'E':, case 'X':, case 'Y':, case 'Z':, case AXIS4_NAME:, case AXIS5_NAME:, case AXIS6_NAME:, case AXIS7_NAME:, case AXIS8_NAME:, case AXIS9_NAME:)
-      case 'F':
-        if (motion_mode_codenum < 0) return;
-        command_letter = 'G';
-        codenum = motion_mode_codenum;
-        TERN_(USE_GCODE_SUBCODES, subcode = motion_mode_subcode);
-        p--; // Back up one character to use the current parameter
-        break;
-
     #endif
 
     default: return;

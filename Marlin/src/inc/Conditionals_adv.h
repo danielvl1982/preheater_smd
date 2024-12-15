@@ -934,10 +934,6 @@
   #endif
 #endif
 
-#if defined(X2_DRIVER_TYPE) && DISABLED(DUAL_X_CARRIAGE)
-  #define HAS_DUAL_X_STEPPERS 1
-#endif
-
 //
 // Spindle/Laser power display types
 // Defined here so sanity checks can use them

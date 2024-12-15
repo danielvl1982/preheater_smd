@@ -441,8 +441,6 @@ void menu_backlash();
         MAX_FEEDRATE_EDIT_VALUES
       #elif ENABLED(LIMITED_MAX_FR_EDITING)
         DEFAULT_MAX_FEEDRATE
-      #else
-        LOGICAL_AXIS_ARRAY_1(9999)
       #endif
     ;
     #if ENABLED(LIMITED_MAX_FR_EDITING) && !defined(MAX_FEEDRATE_EDIT_VALUES)
@@ -500,8 +498,6 @@ void menu_backlash();
         MAX_ACCEL_EDIT_VALUES
       #elif ENABLED(LIMITED_MAX_ACCEL_EDITING)
         DEFAULT_MAX_ACCELERATION
-      #else
-        LOGICAL_AXIS_ARRAY_1(99000)
       #endif
     ;
     #if ENABLED(LIMITED_MAX_ACCEL_EDITING) && !defined(MAX_ACCEL_EDIT_VALUES)
@@ -600,8 +596,6 @@ void menu_backlash();
         #elif ENABLED(LIMITED_JERK_EDITING)
           #define _JERK2(N) DEFAULT_##N##JERK * 2
           { MAPLIST(_JERK2, LOGICAL_AXIS_NAMES) }
-        #else
-          LOGICAL_AXIS_ARRAY_1(990)
         #endif
       ;
 

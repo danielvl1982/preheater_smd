@@ -340,13 +340,6 @@
   #define HAS_FAST_MOVES 1
 #endif
 
-enum AxisRelative : uint8_t {
-  LOGICAL_AXIS_LIST(REL_E, REL_X, REL_Y, REL_Z, REL_I, REL_J, REL_K, REL_U, REL_V, REL_W)
-  #if HAS_EXTRUDERS
-    , E_MODE_ABS, E_MODE_REL
-  #endif
-  , NUM_REL_MODES
-};
 typedef bits_t(NUM_REL_MODES) relative_t;
 
 extern const char G28_STR[];
@@ -359,34 +352,6 @@ public:
   GcodeSuite() { // Relative motion mode for each logical axis
     axis_relative = AxisBits(AXIS_RELATIVE_MODES).bits;
   }
-
-  static bool axis_is_relative(const AxisEnum a) {
-    #if HAS_EXTRUDERS
-      if (a == E_AXIS) {
-        if (TEST(axis_relative, E_MODE_REL)) return true;
-        if (TEST(axis_relative, E_MODE_ABS)) return false;
-      }
-    #endif
-    return TEST(axis_relative, a);
-  }
-  static void set_relative_mode(const bool rel) {
-    axis_relative = rel ? (0 LOGICAL_AXIS_GANG(
-      | _BV(REL_E),
-      | _BV(REL_X), | _BV(REL_Y), | _BV(REL_Z),
-      | _BV(REL_I), | _BV(REL_J), | _BV(REL_K),
-      | _BV(REL_U), | _BV(REL_V), | _BV(REL_W)
-    )) : 0;
-  }
-  #if HAS_EXTRUDERS
-    static void set_e_relative() {
-      CBI(axis_relative, E_MODE_ABS);
-      SBI(axis_relative, E_MODE_REL);
-    }
-    static void set_e_absolute() {
-      CBI(axis_relative, E_MODE_REL);
-      SBI(axis_relative, E_MODE_ABS);
-    }
-  #endif
 
   #if ENABLED(CNC_WORKSPACE_PLANES)
     /**

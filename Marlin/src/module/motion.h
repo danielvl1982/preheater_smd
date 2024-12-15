@@ -418,36 +418,6 @@ constexpr main_axes_bits_t main_axes_mask = _BV(NUM_AXES) - 1;
 
 void set_axis_is_at_home(const AxisEnum axis);
 
-#if HAS_ENDSTOPS
-  /**
-   * axes_homed
-   *   Flags that each linear axis was homed.
-   *   XYZ on cartesian, ABC on delta, ABZ on SCARA.
-   *
-   * axes_trusted
-   *   Flags that the position is trusted in each linear axis. Set when homed.
-   *   Cleared whenever a stepper powers off, potentially losing its position.
-   */
-  extern main_axes_bits_t axes_homed, axes_trusted;
-  void homeaxis(const AxisEnum axis);
-  void set_axis_never_homed(const AxisEnum axis);
-  main_axes_bits_t axes_should_home(main_axes_bits_t axes_mask=main_axes_mask);
-  bool homing_needed_error(main_axes_bits_t axes_mask=main_axes_mask);
-#else
-  constexpr main_axes_bits_t axes_homed = main_axes_mask, axes_trusted = main_axes_mask; // Zero-endstop machines are always homed and trusted
-  inline void homeaxis(const AxisEnum axis)           {}
-  inline void set_axis_never_homed(const AxisEnum)    {}
-  inline main_axes_bits_t axes_should_home(main_axes_bits_t=main_axes_mask) { return 0; }
-  inline bool homing_needed_error(main_axes_bits_t=main_axes_mask) { return false; }
-#endif
-
-inline void set_axis_unhomed(const AxisEnum axis)     { TERN_(HAS_ENDSTOPS, CBI(axes_homed, axis)); }
-inline void set_axis_untrusted(const AxisEnum axis)   { TERN_(HAS_ENDSTOPS, CBI(axes_trusted, axis)); }
-inline void set_all_unhomed()                         { TERN_(HAS_ENDSTOPS, axes_homed = axes_trusted = 0); }
-inline void set_axis_homed(const AxisEnum axis)       { TERN_(HAS_ENDSTOPS, SBI(axes_homed, axis)); }
-inline void set_axis_trusted(const AxisEnum axis)     { TERN_(HAS_ENDSTOPS, SBI(axes_trusted, axis)); }
-inline void set_all_homed()                           { TERN_(HAS_ENDSTOPS, axes_homed = axes_trusted = main_axes_mask); }
-
 inline bool axis_was_homed(const AxisEnum axis)       { return TEST(axes_homed, axis); }
 inline bool axis_is_trusted(const AxisEnum axis)      { return TEST(axes_trusted, axis); }
 inline bool axis_should_home(const AxisEnum axis)     { return (axes_should_home() & _BV(axis)) != 0; }

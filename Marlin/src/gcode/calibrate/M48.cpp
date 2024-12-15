@@ -201,20 +201,6 @@ void GcodeSuite::M48() {
             noz_pos.y + float(sin(RADIANS(angle))) * radius
           };
 
-          #if ENABLED(DELTA)
-            // If the probe can't reach the point on a round bed...
-            // Simply scale the numbers to bring them closer to origin.
-            while (!probe.can_reach(next_pos)) {
-              next_pos *= 0.8f;
-              if (verbose_level > 3)
-                SERIAL_ECHOLNPGM_P(PSTR("Moving inward: X"), next_pos.x, SP_Y_STR, next_pos.y);
-            }
-          #elif HAS_ENDSTOPS
-            // For a rectangular bed just keep the probe in bounds
-            LIMIT(next_pos.x, X_MIN_POS, X_MAX_POS);
-            LIMIT(next_pos.y, Y_MIN_POS, Y_MAX_POS);
-          #endif
-
           if (verbose_level > 3)
             SERIAL_ECHOLNPGM_P(PSTR("Going to: X"), next_pos.x, SP_Y_STR, next_pos.y);
 

@@ -815,9 +815,6 @@ void MarlinSettings::postprocess() {
           dummyf = float(DEFAULT_EJERK);
           EEPROM_WRITE(dummyf);
         #endif
-      #else
-        const xyze_pos_t planner_max_jerk = LOGICAL_AXIS_ARRAY(float(DEFAULT_EJERK), 10, 10, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4);
-        EEPROM_WRITE(planner_max_jerk);
       #endif
 
       TERN_(CLASSIC_JERK, dummyf = 0.02f);

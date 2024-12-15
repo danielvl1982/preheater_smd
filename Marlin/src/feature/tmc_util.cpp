@@ -943,79 +943,6 @@
    * M122 report functions
    */
 
-  void tmc_report_all(LOGICAL_AXIS_ARGS_LC(const bool)) {
-    #define TMC_REPORT(LABEL, ITEM) do{ SERIAL_ECHOPGM(LABEL); tmc_debug_loop(ITEM OPTARGS_LOGICAL()); }while(0)
-    #define DRV_REPORT(LABEL, ITEM) do{ SERIAL_ECHOPGM(LABEL); drv_status_loop(ITEM OPTARGS_LOGICAL()); }while(0)
-
-    TMC_REPORT("\t",                 TMC_CODES);
-    #if HAS_DRIVER(TMC2209)
-      TMC_REPORT("Address\t",        TMC_UART_ADDR);
-    #endif
-    TMC_REPORT("Enabled\t",          TMC_ENABLED);
-    TMC_REPORT("Set current",        TMC_CURRENT);
-    TMC_REPORT("RMS current",        TMC_RMS_CURRENT);
-    TMC_REPORT("MAX current",        TMC_MAX_CURRENT);
-    TMC_REPORT("Run current",        TMC_IRUN);
-    TMC_REPORT("Hold current",       TMC_IHOLD);
-    #if HAS_DRIVER(TMC2160) || HAS_DRIVER(TMC5160)
-      TMC_REPORT("Global scaler",    TMC_GLOBAL_SCALER);
-    #endif
-    TMC_REPORT("CS actual",          TMC_CS_ACTUAL);
-    TMC_REPORT("PWM scale",          TMC_PWM_SCALE);
-    #if HAS_DRIVER(TMC2130) || HAS_DRIVER(TMC2224) || HAS_DRIVER(TMC2660) || HAS_TMC220x
-      TMC_REPORT("vsense\t",         TMC_VSENSE);
-    #endif
-    TMC_REPORT("stealthChop",        TMC_STEALTHCHOP);
-    TMC_REPORT("msteps\t",           TMC_MICROSTEPS);
-    TMC_REPORT("interp\t",           TMC_INTERPOLATE);
-    TMC_REPORT("tstep\t",            TMC_TSTEP);
-    TMC_REPORT("PWM thresh.",        TMC_TPWMTHRS);
-    TMC_REPORT("[mm/s]\t",           TMC_TPWMTHRS_MMS);
-    TMC_REPORT("OT prewarn",         TMC_OTPW);
-    #if ENABLED(MONITOR_DRIVER_STATUS)
-      TMC_REPORT("triggered\n OTP\t", TMC_OTPW_TRIGGERED);
-    #endif
-
-    #if HAS_TMC220x
-      TMC_REPORT("pwm scale sum",     TMC_PWM_SCALE_SUM);
-      TMC_REPORT("pwm scale auto",    TMC_PWM_SCALE_AUTO);
-      TMC_REPORT("pwm offset auto",   TMC_PWM_OFS_AUTO);
-      TMC_REPORT("pwm grad auto",     TMC_PWM_GRAD_AUTO);
-    #endif
-
-    TMC_REPORT("off time",           TMC_TOFF);
-    TMC_REPORT("blank time",         TMC_TBL);
-    TMC_REPORT("hysteresis\n -end\t", TMC_HEND);
-    TMC_REPORT(" -start\t",          TMC_HSTRT);
-    TMC_REPORT("Stallguard thrs",    TMC_SGT);
-    TMC_REPORT("uStep count",        TMC_MSCNT);
-    DRV_REPORT("DRVSTATUS",          TMC_DRV_CODES);
-    #if HAS_TMCX1X0 || HAS_TMC220x
-      DRV_REPORT("sg_result",        TMC_SG_RESULT);
-    #endif
-    #if HAS_TMCX1X0
-      DRV_REPORT("stallguard",       TMC_STALLGUARD);
-      DRV_REPORT("fsactive",         TMC_FSACTIVE);
-    #endif
-    DRV_REPORT("stst\t",             TMC_STST);
-    DRV_REPORT("olb\t",              TMC_OLB);
-    DRV_REPORT("ola\t",              TMC_OLA);
-    DRV_REPORT("s2gb\t",             TMC_S2GB);
-    DRV_REPORT("s2ga\t",             TMC_S2GA);
-    DRV_REPORT("otpw\t",             TMC_DRV_OTPW);
-    DRV_REPORT("ot\t",               TMC_OT);
-    #if HAS_TMC220x
-      DRV_REPORT("157C\t",           TMC_T157);
-      DRV_REPORT("150C\t",           TMC_T150);
-      DRV_REPORT("143C\t",           TMC_T143);
-      DRV_REPORT("120C\t",           TMC_T120);
-      DRV_REPORT("s2vsa\t",          TMC_S2VSA);
-      DRV_REPORT("s2vsb\t",          TMC_S2VSB);
-    #endif
-    DRV_REPORT("Driver registers:\n",TMC_DRV_STATUS_HEX);
-    SERIAL_EOL();
-  }
-
   #define PRINT_TMC_REGISTER(REG_CASE) case TMC_GET_##REG_CASE: print_hex_long(st.REG_CASE(), ':'); break
 
   #if HAS_TMCX1X0
@@ -1153,26 +1080,6 @@
     SERIAL_EOL();
   }
 
-  void tmc_get_registers(LOGICAL_AXIS_ARGS_LC(bool)) {
-    #define _TMC_GET_REG(LABEL, ITEM) do{ SERIAL_ECHOPGM(LABEL); tmc_get_registers(ITEM OPTARGS_LOGICAL()); }while(0)
-    #define TMC_GET_REG(NAME, TABS) _TMC_GET_REG(STRINGIFY(NAME) TABS, TMC_GET_##NAME)
-    _TMC_GET_REG("\t", TMC_AXIS_CODES);
-    TMC_GET_REG(GCONF, "\t\t");
-    TMC_GET_REG(IHOLD_IRUN, "\t");
-    TMC_GET_REG(GSTAT, "\t\t");
-    TMC_GET_REG(IOIN, "\t\t");
-    TMC_GET_REG(TPOWERDOWN, "\t");
-    TMC_GET_REG(TSTEP, "\t\t");
-    TMC_GET_REG(TPWMTHRS, "\t");
-    TMC_GET_REG(TCOOLTHRS, "\t");
-    TMC_GET_REG(THIGH, "\t\t");
-    TMC_GET_REG(CHOPCONF, "\t");
-    TMC_GET_REG(COOLCONF, "\t");
-    TMC_GET_REG(PWMCONF, "\t");
-    TMC_GET_REG(PWM_SCALE, "\t");
-    TMC_GET_REG(DRV_STATUS, "\t");
-  }
-
 #endif // TMC_DEBUG
 
 #if USE_SENSORLESS
@@ -1231,91 +1138,6 @@ static bool test_connection(TMC &st) {
   SERIAL_ECHOLNF(stat);
 
   return test_result;
-}
-
-void test_tmc_connection(LOGICAL_AXIS_ARGS_LC(const bool)) {
-  uint8_t axis_connection = 0;
-
-  if (TERN0(HAS_X_AXIS, x)) {
-    #if AXIS_IS_TMC(X)
-      axis_connection += test_connection(stepperX);
-    #endif
-    #if AXIS_IS_TMC(X2)
-      axis_connection += test_connection(stepperX2);
-    #endif
-  }
-
-  if (TERN0(HAS_Y_AXIS, y)) {
-    #if AXIS_IS_TMC(Y)
-      axis_connection += test_connection(stepperY);
-    #endif
-    #if AXIS_IS_TMC(Y2)
-      axis_connection += test_connection(stepperY2);
-    #endif
-  }
-
-  if (TERN0(HAS_Z_AXIS, z)) {
-    #if AXIS_IS_TMC(Z)
-      axis_connection += test_connection(stepperZ);
-    #endif
-    #if AXIS_IS_TMC(Z2)
-      axis_connection += test_connection(stepperZ2);
-    #endif
-    #if AXIS_IS_TMC(Z3)
-      axis_connection += test_connection(stepperZ3);
-    #endif
-    #if AXIS_IS_TMC(Z4)
-      axis_connection += test_connection(stepperZ4);
-    #endif
-  }
-
-  #if AXIS_IS_TMC(I)
-    if (i) axis_connection += test_connection(stepperI);
-  #endif
-  #if AXIS_IS_TMC(J)
-    if (j) axis_connection += test_connection(stepperJ);
-  #endif
-  #if AXIS_IS_TMC(K)
-    if (k) axis_connection += test_connection(stepperK);
-  #endif
-  #if AXIS_IS_TMC(U)
-    if (u) axis_connection += test_connection(stepperU);
-  #endif
-  #if AXIS_IS_TMC(V)
-    if (v) axis_connection += test_connection(stepperV);
-  #endif
-  #if AXIS_IS_TMC(W)
-    if (w) axis_connection += test_connection(stepperW);
-  #endif
-
-  if (TERN0(HAS_EXTRUDERS, e)) {
-    #if AXIS_IS_TMC(E0)
-      axis_connection += test_connection(stepperE0);
-    #endif
-    #if AXIS_IS_TMC(E1)
-      axis_connection += test_connection(stepperE1);
-    #endif
-    #if AXIS_IS_TMC(E2)
-      axis_connection += test_connection(stepperE2);
-    #endif
-    #if AXIS_IS_TMC(E3)
-      axis_connection += test_connection(stepperE3);
-    #endif
-    #if AXIS_IS_TMC(E4)
-      axis_connection += test_connection(stepperE4);
-    #endif
-    #if AXIS_IS_TMC(E5)
-      axis_connection += test_connection(stepperE5);
-    #endif
-    #if AXIS_IS_TMC(E6)
-      axis_connection += test_connection(stepperE6);
-    #endif
-    #if AXIS_IS_TMC(E7)
-      axis_connection += test_connection(stepperE7);
-    #endif
-  }
-
-  if (axis_connection) LCD_MESSAGE(MSG_ERROR_TMC);
 }
 
 #endif // HAS_TRINAMIC_CONFIG

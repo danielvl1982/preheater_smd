@@ -104,27 +104,6 @@
   #define FIL_RUNOUT_PIN                      44
 #endif
 
-// This board have the option to use an extra TMC2209 stepper, one of the use could be as a second extruder.
-#if EXTRUDERS < 2
-  // TODO: Correct here that when we have two extruders (or whatever), use the extra endstops. i.e., The max, there is no Z2_endstop.
-  #if NUM_Z_STEPPERS > 1
-    #define Z2_STOP_PIN                       14
-  #endif
-#else
-  // If we want to configure the extra stepper as a Extruder, we should have undef all of the extra motors.
-  #undef X2_DRIVER_TYPE
-  #undef Y2_DRIVER_TYPE
-  #undef Z2_DRIVER_TYPE
-  #undef Z3_DRIVER_TYPE
-  #undef Z4_DRIVER_TYPE
-
-  // For more than one extruder define the new extruder and its pins.
-  // Remember to #define TEMP_SENSOR_1, since this contains the E1 sensor type.
-
-  #define FIL_RUNOUT2_PIN                     14
-
-#endif
-
 //
 // Extruder / Bed
 //
