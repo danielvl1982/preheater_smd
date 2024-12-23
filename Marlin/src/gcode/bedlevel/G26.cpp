@@ -298,6 +298,13 @@ typedef struct {
       e.y = bedlevel.get_mesh_y(p2.y) - (INTERSECTION_CIRCLE_RADIUS - (CROSSHAIRS_SIZE)) * dy;
       s.z = e.z = layer_height;
 
+      #if HAS_ENDSTOPS
+        LIMIT(s.y, Y_MIN_POS + 1, Y_MAX_POS - 1);
+        LIMIT(e.y, Y_MIN_POS + 1, Y_MAX_POS - 1);
+        LIMIT(s.x, X_MIN_POS + 1, X_MAX_POS - 1);
+        LIMIT(e.x, X_MIN_POS + 1, X_MAX_POS - 1);
+      #endif
+
       if (position_is_reachable(s) && position_is_reachable(e))
         print_line_from_here_to_there(s, e);
     }
@@ -807,6 +814,16 @@ void GcodeSuite::G26() {
 
           xyz_float_t p = { circle.x + _COS(ind    ), circle.y + _SIN(ind    ), g26.layer_height },
                       q = { circle.x + _COS(ind + 1), circle.y + _SIN(ind + 1), g26.layer_height };
+
+          #if IS_KINEMATIC
+            // Check to make sure this segment is entirely on the bed, skip if not.
+            if (!position_is_reachable(p) || !position_is_reachable(q)) continue;
+          #elif HAS_ENDSTOPS
+            LIMIT(p.x, X_MIN_POS + 1, X_MAX_POS - 1); // Prevent hitting the endstops
+            LIMIT(p.y, Y_MIN_POS + 1, Y_MAX_POS - 1);
+            LIMIT(q.x, X_MIN_POS + 1, X_MAX_POS - 1);
+            LIMIT(q.y, Y_MIN_POS + 1, Y_MAX_POS - 1);
+          #endif
 
           g26.print_line_from_here_to_there(p, q);
           SERIAL_FLUSH();   // Prevent host M105 buffer overrun.

@@ -790,6 +790,85 @@
   //#define EVENT_GCODE_IDEX_AFTER_MODECHANGE "G28X"
 #endif
 
+// @section multi stepper
+
+/**
+ * Multi-Stepper / Multi-Endstop
+ *
+ * When X2_DRIVER_TYPE is defined, this indicates that the X and X2 motors work in tandem.
+ * The following explanations for X also apply to Y and Z multi-stepper setups.
+ * Endstop offsets may be changed by 'M666 X<offset> Y<offset> Z<offset>' and stored to EEPROM.
+ *
+ * - Enable INVERT_X2_VS_X_DIR if the X2 motor requires an opposite DIR signal from X.
+ *
+ * - Enable X_DUAL_ENDSTOPS if the second motor has its own endstop, with adjustable offset.
+ *
+ *   - Extra endstops are included in the output of 'M119'.
+ *
+ *   - Set X_DUAL_ENDSTOP_ADJUSTMENT to the known error in the X2 endstop.
+ *     Applied to the X2 motor on 'G28' / 'G28 X'.
+ *     Get the offset by homing X and measuring the error.
+ *     Also set with 'M666 X<offset>' and stored to EEPROM with 'M500'.
+ *
+ *   - Use X2_USE_ENDSTOP to set the endstop plug by name. (_XMIN_, _XMAX_, _YMIN_, _YMAX_, _ZMIN_, _ZMAX_)
+ */
+#if HAS_X2_STEPPER && DISABLED(DUAL_X_CARRIAGE)
+  //#define INVERT_X2_VS_X_DIR        // X2 direction signal is the opposite of X
+  //#define X_DUAL_ENDSTOPS           // X2 has its own endstop
+  #if ENABLED(X_DUAL_ENDSTOPS)
+    #define X2_USE_ENDSTOP    _XMAX_  // X2 endstop board plug. Don't forget to enable USE_*_PLUG.
+    #define X2_ENDSTOP_ADJUSTMENT  0  // X2 offset relative to X endstop
+  #endif
+#endif
+
+#if HAS_DUAL_Y_STEPPERS
+  //#define INVERT_Y2_VS_Y_DIR        // Y2 direction signal is the opposite of Y
+  //#define Y_DUAL_ENDSTOPS           // Y2 has its own endstop
+  #if ENABLED(Y_DUAL_ENDSTOPS)
+    #define Y2_USE_ENDSTOP    _YMAX_  // Y2 endstop board plug. Don't forget to enable USE_*_PLUG.
+    #define Y2_ENDSTOP_ADJUSTMENT  0  // Y2 offset relative to Y endstop
+  #endif
+#endif
+
+//
+// Multi-Z steppers
+//
+#ifdef Z2_DRIVER_TYPE
+  //#define INVERT_Z2_VS_Z_DIR        // Z2 direction signal is the opposite of Z
+
+  //#define Z_MULTI_ENDSTOPS          // Other Z axes have their own endstops
+  #if ENABLED(Z_MULTI_ENDSTOPS)
+    #define Z2_USE_ENDSTOP   _XMAX_   // Z2 endstop board plug. Don't forget to enable USE_*_PLUG.
+    #define Z2_ENDSTOP_ADJUSTMENT 0   // Z2 offset relative to Z endstop
+  #endif
+  #ifdef Z3_DRIVER_TYPE
+    //#define INVERT_Z3_VS_Z_DIR      // Z3 direction signal is the opposite of Z
+    #if ENABLED(Z_MULTI_ENDSTOPS)
+      #define Z3_USE_ENDSTOP   _YMAX_ // Z3 endstop board plug. Don't forget to enable USE_*_PLUG.
+      #define Z3_ENDSTOP_ADJUSTMENT 0 // Z3 offset relative to Z endstop
+    #endif
+  #endif
+  #ifdef Z4_DRIVER_TYPE
+    //#define INVERT_Z4_VS_Z_DIR      // Z4 direction signal is the opposite of Z
+    #if ENABLED(Z_MULTI_ENDSTOPS)
+      #define Z4_USE_ENDSTOP   _ZMAX_ // Z4 endstop board plug. Don't forget to enable USE_*_PLUG.
+      #define Z4_ENDSTOP_ADJUSTMENT 0 // Z4 offset relative to Z endstop
+    #endif
+  #endif
+#endif
+
+// Drive the E axis with two synchronized steppers
+//#define E_DUAL_STEPPER_DRIVERS
+#if ENABLED(E_DUAL_STEPPER_DRIVERS)
+  //#define INVERT_E1_VS_E0_DIR       // E direction signals are opposites
+#endif
+
+// @section extruder
+
+// Activate a solenoid on the active extruder with M380. Disable all with M381.
+// Define SOL0_PIN, SOL1_PIN, etc., for each extruder that has a solenoid.
+//#define EXT_SOLENOID
+
 // @section homing
 
 /**
@@ -811,9 +890,216 @@
 //#define HOME_Z_FIRST                        // Home Z first. Requires a real endstop (not a probe).
 //#define CODEPENDENT_XY_HOMING               // If X/Y can't home without homing Y/X first
 
+// @section bltouch
+
+#if ENABLED(BLTOUCH)
+  /**
+   * Either: Use the defaults (recommended) or: For special purposes, use the following DEFINES
+   * Do not activate settings that the probe might not understand. Clones might misunderstand
+   * advanced commands.
+   *
+   * Note: If the probe is not deploying, do a "Reset" and "Self-Test" and then check the
+   *       wiring of the BROWN, RED and ORANGE wires.
+   *
+   * Note: If the trigger signal of your probe is not being recognized, it has been very often
+   *       because the BLACK and WHITE wires needed to be swapped. They are not "interchangeable"
+   *       like they would be with a real switch. So please check the wiring first.
+   *
+   * Settings for all BLTouch and clone probes:
+   */
+
+  // Safety: The probe needs time to recognize the command.
+  //         Minimum command delay (ms). Enable and increase if needed.
+  //#define BLTOUCH_DELAY 500
+
+  /**
+   * Settings for BLTOUCH Classic 1.2, 1.3 or BLTouch Smart 1.0, 2.0, 2.2, 3.0, 3.1, and most clones:
+   */
+
+  // Feature: Switch into SW mode after a deploy. It makes the output pulse longer. Can be useful
+  //          in special cases, like noisy or filtered input configurations.
+  //#define BLTOUCH_FORCE_SW_MODE
+
+  /**
+   * Settings for BLTouch Smart 3.0 and 3.1
+   * Summary:
+   *   - Voltage modes: 5V and OD (open drain - "logic voltage free") output modes
+   *   - High-Speed mode
+   *   - Disable LCD voltage options
+   */
+
+  /**
+   * Danger: Don't activate 5V mode unless attached to a 5V-tolerant controller!
+   * V3.0 or 3.1: Set default mode to 5V mode at Marlin startup.
+   * If disabled, OD mode is the hard-coded default on 3.0
+   * On startup, Marlin will compare its EEPROM to this value. If the selected mode
+   * differs, a mode set EEPROM write will be completed at initialization.
+   * Use the option below to force an EEPROM write to a V3.1 probe regardless.
+   */
+  //#define BLTOUCH_SET_5V_MODE
+
+  // Safety: Enable voltage mode settings in the LCD menu.
+  //#define BLTOUCH_LCD_VOLTAGE_MENU
+
+  /**
+   * Safety: Activate if connecting a probe with an unknown voltage mode.
+   * V3.0: Set a probe into mode selected above at Marlin startup. Required for 5V mode on 3.0
+   * V3.1: Force a probe with unknown mode into selected mode at Marlin startup ( = Probe EEPROM write )
+   * To preserve the life of the probe, use this once then turn it off and re-flash.
+   */
+  //#define BLTOUCH_FORCE_MODE_SET
+
+  /**
+   * Enable "HIGH SPEED" option for probing.
+   * Danger: Disable if your probe sometimes fails. Only suitable for stable well-adjusted systems.
+   * This feature was designed for Deltabots with very fast Z moves; however, higher speed Cartesians
+   * might be able to use it. If the machine can't raise Z fast enough the BLTouch may go into ALARM.
+   *
+   * Set the default state here, change with 'M401 S' or UI, use M500 to save, M502 to reset.
+   */
+  //#define BLTOUCH_HS_MODE true
+
+#endif // BLTOUCH
+
+// @section calibration
+
+/**
+ * Z Steppers Auto-Alignment
+ * Add the G34 command to align multiple Z steppers using a bed probe.
+ */
+//#define Z_STEPPER_AUTO_ALIGN
+#if ENABLED(Z_STEPPER_AUTO_ALIGN)
+  /**
+   * Define probe X and Y positions for Z1, Z2 [, Z3 [, Z4]]
+   * These positions are machine-relative and do not shift with the M206 home offset!
+   * If not defined, probe limits will be used.
+   * Override with 'M422 S<index> X<pos> Y<pos>'.
+   */
+  //#define Z_STEPPER_ALIGN_XY { {  10, 190 }, { 100,  10 }, { 190, 190 } }
+
+  /**
+   * Orientation for the automatically-calculated probe positions.
+   * Override Z stepper align points with 'M422 S<index> X<pos> Y<pos>'
+   *
+   * 2 Steppers:  (0)     (1)
+   *               |       |   2   |
+   *               | 1   2 |       |
+   *               |       |   1   |
+   *
+   * 3 Steppers:  (0)     (1)     (2)     (3)
+   *               |   3   | 1     | 2   1 |     2 |
+   *               |       |     3 |       | 3     |
+   *               | 1   2 | 2     |   3   |     1 |
+   *
+   * 4 Steppers:  (0)     (1)     (2)     (3)
+   *               | 4   3 | 1   4 | 2   1 | 3   2 |
+   *               |       |       |       |       |
+   *               | 1   2 | 2   3 | 3   4 | 4   1 |
+   */
+  #ifndef Z_STEPPER_ALIGN_XY
+    //#define Z_STEPPERS_ORIENTATION 0
+  #endif
+
+  /**
+   * Z Stepper positions for more rapid convergence in bed alignment.
+   * Requires 3 or 4 Z steppers.
+   *
+   * Define Stepper XY positions for Z1, Z2, Z3... corresponding to the screw
+   * positions in the bed carriage, with one position per Z stepper in stepper
+   * driver order.
+   */
+  //#define Z_STEPPER_ALIGN_STEPPER_XY { { 210.7, 102.5 }, { 152.6, 220.0 }, { 94.5, 102.5 } }
+
+  #ifndef Z_STEPPER_ALIGN_STEPPER_XY
+    // Amplification factor. Used to scale the correction step up or down in case
+    // the stepper (spindle) position is farther out than the test point.
+    #define Z_STEPPER_ALIGN_AMP 1.0       // Use a value > 1.0 NOTE: This may cause instability!
+  #endif
+
+  // On a 300mm bed a 5% grade would give a misalignment of ~1.5cm
+  #define G34_MAX_GRADE              5    // (%) Maximum incline that G34 will handle
+  #define Z_STEPPER_ALIGN_ITERATIONS 5    // Number of iterations to apply during alignment
+  #define Z_STEPPER_ALIGN_ACC        0.02 // Stop iterating early if the accuracy is better than this
+  #define RESTORE_LEVELING_AFTER_G34      // Restore leveling after G34 is done?
+  // After G34, re-home Z (G28 Z) or just calculate it from the last probe heights?
+  // Re-homing might be more precise in reproducing the actual 'G28 Z' homing height, especially on an uneven bed.
+  #define HOME_AFTER_G34
+#endif
+
+//
+// Add the G35 command to read bed corners to help adjust screws. Requires a bed probe.
+//
+//#define ASSISTED_TRAMMING
+#if ENABLED(ASSISTED_TRAMMING)
+
+  // Define from 3 to 9 points to probe.
+  #define TRAMMING_POINT_XY { {  20, 20 }, { 180,  20 }, { 180, 180 }, { 20, 180 } }
+
+  // Define position names for probe points.
+  #define TRAMMING_POINT_NAME_1 "Front-Left"
+  #define TRAMMING_POINT_NAME_2 "Front-Right"
+  #define TRAMMING_POINT_NAME_3 "Back-Right"
+  #define TRAMMING_POINT_NAME_4 "Back-Left"
+
+  #define RESTORE_LEVELING_AFTER_G35    // Enable to restore leveling setup after operation
+  //#define REPORT_TRAMMING_MM          // Report Z deviation (mm) for each point relative to the first
+
+  //#define ASSISTED_TRAMMING_WIZARD    // Add a Tramming Wizard to the LCD menu
+
+  //#define ASSISTED_TRAMMING_WAIT_POSITION { X_CENTER, Y_CENTER, 30 } // Move the nozzle out of the way for adjustment
+
+  /**
+   * Screw thread:
+   *   M3: 30 = Clockwise, 31 = Counter-Clockwise
+   *   M4: 40 = Clockwise, 41 = Counter-Clockwise
+   *   M5: 50 = Clockwise, 51 = Counter-Clockwise
+   */
+  #define TRAMMING_SCREW_THREAD 30
+
+#endif
+
+// @section motion control
+
+/**
+ * Input Shaping -- EXPERIMENTAL
+ *
+ * Zero Vibration (ZV) Input Shaping for X and/or Y movements.
+ *
+ * This option uses a lot of SRAM for the step buffer. The buffer size is
+ * calculated automatically from SHAPING_FREQ_[XY], DEFAULT_AXIS_STEPS_PER_UNIT,
+ * DEFAULT_MAX_FEEDRATE and ADAPTIVE_STEP_SMOOTHING. The default calculation can
+ * be overridden by setting SHAPING_MIN_FREQ and/or SHAPING_MAX_FEEDRATE.
+ * The higher the frequency and the lower the feedrate, the smaller the buffer.
+ * If the buffer is too small at runtime, input shaping will have reduced
+ * effectiveness during high speed movements.
+ *
+ * Tune with M593 D<factor> F<frequency>:
+ *
+ *  D<factor>    Set the zeta/damping factor. If axes (X, Y, etc.) are not specified, set for all axes.
+ *  F<frequency> Set the frequency. If axes (X, Y, etc.) are not specified, set for all axes.
+ *  T[map]       Input Shaping type, 0:ZV, 1:EI, 2:2H EI (not implemented yet)
+ *  X<1>         Set the given parameters only for the X axis.
+ *  Y<1>         Set the given parameters only for the Y axis.
+ */
+//#define INPUT_SHAPING_X
+//#define INPUT_SHAPING_Y
+#if EITHER(INPUT_SHAPING_X, INPUT_SHAPING_Y)
+  #if ENABLED(INPUT_SHAPING_X)
+    #define SHAPING_FREQ_X  40.0        // (Hz) The default dominant resonant frequency on the X axis.
+    #define SHAPING_ZETA_X   0.15       // Damping ratio of the X axis (range: 0.0 = no damping to 1.0 = critical damping).
+  #endif
+  #if ENABLED(INPUT_SHAPING_Y)
+    #define SHAPING_FREQ_Y  40.0        // (Hz) The default dominant resonant frequency on the Y axis.
+    #define SHAPING_ZETA_Y   0.15       // Damping ratio of the Y axis (range: 0.0 = no damping to 1.0 = critical damping).
+  #endif
+  //#define SHAPING_MIN_FREQ  20.0      // (Hz) By default the minimum of the shaping frequencies. Override to affect SRAM usage.
+  //#define SHAPING_MAX_STEPRATE 10000  // By default the maximum total step rate of the shaped axes. Override to affect SRAM usage.
+  //#define SHAPING_MENU                // Add a menu to the LCD to set shaping parameters.
+#endif
+
 // @section motion
 
-#define AXIS_RELATIVE_MODES { false, false, false }
+#define AXIS_RELATIVE_MODES { false, false, false, false }
 
 // Add a Duplicate option for well-separated conjoined nozzles
 //#define MULTI_NOZZLE_DUPLICATION

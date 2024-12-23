@@ -187,11 +187,260 @@
   #undef HOTEND_OFFSET_Z
 #endif
 
+// Clean up E-stepper-based settings...
+#if E_STEPPERS <= 7
+  #undef INVERT_E7_DIR
+  #undef E7_DRIVER_TYPE
+  #if E_STEPPERS <= 6
+    #undef INVERT_E6_DIR
+    #undef E6_DRIVER_TYPE
+    #if E_STEPPERS <= 5
+      #undef INVERT_E5_DIR
+      #undef E5_DRIVER_TYPE
+      #if E_STEPPERS <= 4
+        #undef INVERT_E4_DIR
+        #undef E4_DRIVER_TYPE
+        #if E_STEPPERS <= 3
+          #undef INVERT_E3_DIR
+          #undef E3_DRIVER_TYPE
+          #if E_STEPPERS <= 2
+            #undef INVERT_E2_DIR
+            #undef E2_DRIVER_TYPE
+            #if E_STEPPERS <= 1
+              #undef INVERT_E1_DIR
+              #undef E1_DRIVER_TYPE
+              #if E_STEPPERS == 0
+                #undef INVERT_E0_DIR
+                #undef E0_DRIVER_TYPE
+              #endif
+            #endif
+          #endif
+        #endif
+      #endif
+    #endif
+  #endif
+#endif
+
 /**
  * Number of Linear Axes (e.g., XYZIJKUVW)
  * All the logical axes except for the tool (E) axis
  */
-#define NUM_AXES 0
+#ifdef NUM_AXES
+  #undef NUM_AXES
+  #define NUM_AXES_WARNING 1
+#endif
+
+#ifdef W_DRIVER_TYPE
+  #define NUM_AXES 9
+#elif defined(V_DRIVER_TYPE)
+  #define NUM_AXES 8
+#elif defined(U_DRIVER_TYPE)
+  #define NUM_AXES 7
+#elif defined(K_DRIVER_TYPE)
+  #define NUM_AXES 6
+#elif defined(J_DRIVER_TYPE)
+  #define NUM_AXES 5
+#elif defined(I_DRIVER_TYPE)
+  #define NUM_AXES 4
+#elif defined(Z_DRIVER_TYPE)
+  #define NUM_AXES 3
+#elif defined(Y_DRIVER_TYPE)
+  #define NUM_AXES 2
+#elif defined(X_DRIVER_TYPE)
+  #define NUM_AXES 1
+#else
+  #define NUM_AXES 0
+#endif
+#if NUM_AXES >= 1
+  #define HAS_X_AXIS 1
+  #define HAS_A_AXIS 1
+  #if NUM_AXES >= XY
+    #define HAS_Y_AXIS 1
+    #define HAS_B_AXIS 1
+    #if NUM_AXES >= XYZ
+      #define HAS_Z_AXIS 1
+      #define HAS_C_AXIS 1
+      #if NUM_AXES >= 4
+        #define HAS_I_AXIS 1
+        #if NUM_AXES >= 5
+          #define HAS_J_AXIS 1
+          #if NUM_AXES >= 6
+            #define HAS_K_AXIS 1
+            #if NUM_AXES >= 7
+              #define HAS_U_AXIS 1
+              #if NUM_AXES >= 8
+                #define HAS_V_AXIS 1
+                #if NUM_AXES >= 9
+                  #define HAS_W_AXIS 1
+                #endif
+              #endif
+            #endif
+          #endif
+        #endif
+      #endif
+    #endif
+  #endif
+#endif
+
+#if !HAS_X_AXIS
+  #undef ENDSTOPPULLUP_XMIN
+  #undef ENDSTOPPULLUP_XMAX
+  #undef X_MIN_ENDSTOP_INVERTING
+  #undef X_MAX_ENDSTOP_INVERTING
+  #undef X2_DRIVER_TYPE
+  #undef X_ENABLE_ON
+  #undef DISABLE_X
+  #undef INVERT_X_DIR
+  #undef X_HOME_DIR
+  #undef X_MIN_POS
+  #undef X_MAX_POS
+  #undef MANUAL_X_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOPS
+  #undef MAX_SOFTWARE_ENDSTOPS
+#endif
+
+#if !HAS_Y_AXIS
+  #undef ENDSTOPPULLUP_YMIN
+  #undef ENDSTOPPULLUP_YMAX
+  #undef Y_MIN_ENDSTOP_INVERTING
+  #undef Y_MAX_ENDSTOP_INVERTING
+  #undef Y2_DRIVER_TYPE
+  #undef Y_ENABLE_ON
+  #undef DISABLE_Y
+  #undef INVERT_Y_DIR
+  #undef Y_HOME_DIR
+  #undef Y_MIN_POS
+  #undef Y_MAX_POS
+  #undef MANUAL_Y_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOP_Y
+  #undef MAX_SOFTWARE_ENDSTOP_Y
+#endif
+
+#if HAS_Z_AXIS
+  #ifdef Z4_DRIVER_TYPE
+    #define NUM_Z_STEPPERS 4
+  #elif defined(Z3_DRIVER_TYPE)
+    #define NUM_Z_STEPPERS 3
+  #elif defined(Z2_DRIVER_TYPE)
+    #define NUM_Z_STEPPERS 2
+  #else
+    #define NUM_Z_STEPPERS 1
+  #endif
+#else
+  #undef ENDSTOPPULLUP_ZMIN
+  #undef ENDSTOPPULLUP_ZMAX
+  #undef Z_MIN_ENDSTOP_INVERTING
+  #undef Z_MAX_ENDSTOP_INVERTING
+  #undef Z2_DRIVER_TYPE
+  #undef Z3_DRIVER_TYPE
+  #undef Z4_DRIVER_TYPE
+  #undef Z_ENABLE_ON
+  #undef DISABLE_Z
+  #undef INVERT_Z_DIR
+  #undef Z_HOME_DIR
+  #undef Z_MIN_POS
+  #undef Z_MAX_POS
+  #undef MANUAL_Z_HOME_POS
+  #undef Z_SAFE_HOMING
+  #undef MIN_SOFTWARE_ENDSTOP_Z
+  #undef MAX_SOFTWARE_ENDSTOP_Z
+#endif
+
+#if !HAS_I_AXIS
+  #undef ENDSTOPPULLUP_IMIN
+  #undef ENDSTOPPULLUP_IMAX
+  #undef I_MIN_ENDSTOP_INVERTING
+  #undef I_MAX_ENDSTOP_INVERTING
+  #undef I_ENABLE_ON
+  #undef DISABLE_I
+  #undef INVERT_I_DIR
+  #undef I_HOME_DIR
+  #undef I_MIN_POS
+  #undef I_MAX_POS
+  #undef MANUAL_I_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOP_I
+  #undef MAX_SOFTWARE_ENDSTOP_I
+#endif
+
+#if !HAS_J_AXIS
+  #undef ENDSTOPPULLUP_JMIN
+  #undef ENDSTOPPULLUP_JMAX
+  #undef J_MIN_ENDSTOP_INVERTING
+  #undef J_MAX_ENDSTOP_INVERTING
+  #undef J_ENABLE_ON
+  #undef DISABLE_J
+  #undef INVERT_J_DIR
+  #undef J_HOME_DIR
+  #undef J_MIN_POS
+  #undef J_MAX_POS
+  #undef MANUAL_J_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOP_J
+  #undef MAX_SOFTWARE_ENDSTOP_J
+#endif
+
+#if !HAS_K_AXIS
+  #undef ENDSTOPPULLUP_KMIN
+  #undef ENDSTOPPULLUP_KMAX
+  #undef K_MIN_ENDSTOP_INVERTING
+  #undef K_MAX_ENDSTOP_INVERTING
+  #undef K_ENABLE_ON
+  #undef DISABLE_K
+  #undef INVERT_K_DIR
+  #undef K_HOME_DIR
+  #undef K_MIN_POS
+  #undef K_MAX_POS
+  #undef MANUAL_K_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOP_K
+  #undef MAX_SOFTWARE_ENDSTOP_K
+#endif
+
+#if !HAS_U_AXIS
+  #undef ENDSTOPPULLUP_UMIN
+  #undef ENDSTOPPULLUP_UMAX
+  #undef U_MIN_ENDSTOP_INVERTING
+  #undef U_MAX_ENDSTOP_INVERTING
+  #undef U_ENABLE_ON
+  #undef DISABLE_U
+  #undef INVERT_U_DIR
+  #undef U_HOME_DIR
+  #undef U_MIN_POS
+  #undef U_MAX_POS
+  #undef MANUAL_U_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOP_U
+  #undef MAX_SOFTWARE_ENDSTOP_U
+#endif
+
+#if !HAS_V_AXIS
+  #undef ENDSTOPPULLUP_VMIN
+  #undef ENDSTOPPULLUP_VMAX
+  #undef V_MIN_ENDSTOP_INVERTING
+  #undef V_MAX_ENDSTOP_INVERTING
+  #undef V_ENABLE_ON
+  #undef DISABLE_V
+  #undef INVERT_V_DIR
+  #undef V_HOME_DIR
+  #undef V_MIN_POS
+  #undef V_MAX_POS
+  #undef MANUAL_V_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOP_V
+  #undef MAX_SOFTWARE_ENDSTOP_V
+#endif
+
+#if !HAS_W_AXIS
+  #undef ENDSTOPPULLUP_WMIN
+  #undef ENDSTOPPULLUP_WMAX
+  #undef W_MIN_ENDSTOP_INVERTING
+  #undef W_MAX_ENDSTOP_INVERTING
+  #undef W_ENABLE_ON
+  #undef DISABLE_W
+  #undef INVERT_W_DIR
+  #undef W_HOME_DIR
+  #undef W_MIN_POS
+  #undef W_MAX_POS
+  #undef MANUAL_W_HOME_POS
+  #undef MIN_SOFTWARE_ENDSTOP_W
+  #undef MAX_SOFTWARE_ENDSTOP_W
+#endif
 
 #define _OR_HAS_DA(A) ENABLED(DISABLE_##A) ||
 #if MAP(_OR_HAS_DA, X, Y, Z, I, J, K, U, V, W) 0
@@ -201,6 +450,14 @@
   #define HAS_DISABLE_AXES 1
 #endif
 #undef _OR_HAS_DA
+
+#ifdef X2_DRIVER_TYPE
+  #define HAS_X2_STEPPER 1
+#endif
+#ifdef Y2_DRIVER_TYPE
+  #define HAS_Y2_STEPPER 1
+  #define HAS_DUAL_Y_STEPPERS 1
+#endif
 
 /**
  * Number of Primary Linear Axes (e.g., XYZ)
@@ -1451,6 +1708,7 @@
 #if  (HAS_X_AXIS && X_HOME_DIR) || (HAS_Y_AXIS && Y_HOME_DIR) || (HAS_Z_AXIS && Z_HOME_DIR) \
   || (HAS_I_AXIS && I_HOME_DIR) || (HAS_J_AXIS && J_HOME_DIR) || (HAS_K_AXIS && K_HOME_DIR) \
   || (HAS_U_AXIS && U_HOME_DIR) || (HAS_V_AXIS && V_HOME_DIR) || (HAS_W_AXIS && W_HOME_DIR)
+  #define HAS_ENDSTOPS 1
   #define COORDINATE_OKAY(N,L,H) WITHIN(N,L,H)
 #else
   #define COORDINATE_OKAY(N,L,H) true

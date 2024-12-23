@@ -36,6 +36,7 @@
 
 // Strings for sanity check messages
 #define _NUM_AXES_STR NUM_AXIS_GANG("X ", "Y ", "Z ", "I ", "J ", "K ", "U ", "V ", "W ")
+#define _LOGICAL_AXES_STR LOGICAL_AXIS_GANG("E ", "X ", "Y ", "Z ", "I ", "J ", "K ", "U ", "V ", "W ")
 
 // Make sure macros aren't borked
 #define TEST1
@@ -252,6 +253,40 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
   #endif
 #elif ANY(SERIAL_XON_XOFF, SERIAL_STATS_MAX_RX_QUEUED, SERIAL_STATS_DROPPED_RX)
   #error "SERIAL_XON_XOFF and SERIAL_STATS_* features not supported on USB-native AVR devices."
+#endif
+
+/**
+ * Multiple Stepper Drivers Per Axis
+ */
+#define GOOD_AXIS_PINS(A) PINS_EXIST(A##_ENABLE, A##_STEP, A##_DIR)
+#if HAS_X2_STEPPER && !GOOD_AXIS_PINS(X2)
+  #error "If X2_DRIVER_TYPE is defined, then X2 ENABLE/STEP/DIR pins are also needed."
+#endif
+#if HAS_DUAL_Y_STEPPERS && !GOOD_AXIS_PINS(Y2)
+  #error "If Y2_DRIVER_TYPE is defined, then Y2 ENABLE/STEP/DIR pins are also needed."
+#endif
+#if HAS_Z_AXIS
+  #if NUM_Z_STEPPERS >= 2 && !GOOD_AXIS_PINS(Z2)
+    #error "If Z2_DRIVER_TYPE is defined, then Z2 ENABLE/STEP/DIR pins are also needed."
+  #elif NUM_Z_STEPPERS >= 3 && !GOOD_AXIS_PINS(Z3)
+    #error "If Z3_DRIVER_TYPE is defined, then Z3 ENABLE/STEP/DIR pins are also needed."
+  #elif NUM_Z_STEPPERS >= 4 && !GOOD_AXIS_PINS(Z4)
+    #error "If Z4_DRIVER_TYPE is defined, then Z4 ENABLE/STEP/DIR pins are also needed."
+  #endif
+#endif
+
+/**
+ * Validate bed size
+ */
+#if !defined(X_BED_SIZE) || !defined(Y_BED_SIZE)
+  #error "X_BED_SIZE and Y_BED_SIZE are required!"
+#else
+  #if HAS_X_AXIS
+    static_assert(X_MAX_LENGTH >= X_BED_SIZE, "Movement bounds (X_MIN_POS, X_MAX_POS) are too narrow to contain X_BED_SIZE.");
+  #endif
+  #if HAS_Y_AXIS
+    static_assert(Y_MAX_LENGTH >= Y_BED_SIZE, "Movement bounds (Y_MIN_POS, Y_MAX_POS) are too narrow to contain Y_BED_SIZE.");
+  #endif
 #endif
 
 /**
@@ -1303,6 +1338,27 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
   #endif
 
   /**
+   * Require pin options and pins to be defined
+   */
+  #if ENABLED(SENSORLESS_PROBING)
+    #if ENABLED(DELTA) && !(X_SENSORLESS && Y_SENSORLESS && Z_SENSORLESS)
+      #error "SENSORLESS_PROBING requires TMC2130/2160/2209/5130/5160 drivers on X, Y, and Z and {X|Y|Z}_STALL_SENSITIVITY."
+    #elif !Z_SENSORLESS
+      #error "SENSORLESS_PROBING requires a TMC2130/2160/2209/5130/5160 driver on Z and Z_STALL_SENSITIVITY."
+    #endif
+  #elif ENABLED(Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN)
+    #if DISABLED(USE_ZMIN_PLUG)
+      #error "Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN requires USE_ZMIN_PLUG to be enabled."
+    #elif !USE_Z_MIN
+      #error "Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN requires the Z_MIN_PIN to be defined."
+    #elif Z_MIN_PROBE_ENDSTOP_INVERTING != Z_MIN_ENDSTOP_INVERTING
+      #error "Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN requires Z_MIN_ENDSTOP_INVERTING to match Z_MIN_PROBE_ENDSTOP_INVERTING."
+    #endif
+  #elif !HAS_Z_MIN_PROBE_PIN
+    #error "Z_MIN_PROBE_PIN must be defined if Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN is not enabled."
+  #endif
+
+  /**
    * Check for improper NOZZLE_TO_PROBE_OFFSET
    */
   constexpr xyz_pos_t sanity_nozzle_to_probe_offset = NOZZLE_TO_PROBE_OFFSET;
@@ -1664,6 +1720,27 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
 #if ALL(Z_HOME_TO_MIN, Z_PROBE_ALLEN_KEY, Z_MIN_PROBE_USES_Z_MIN_ENDSTOP_PIN)
   #error "You can't home to a Z min endstop with a Z_PROBE_ALLEN_KEY."
 #endif
+
+/**
+ * Dual X Carriage requirements
+ */
+#if ENABLED(DUAL_X_CARRIAGE)
+  #if EXTRUDERS < 2
+    #error "DUAL_X_CARRIAGE requires 2 (or more) extruders."
+  #elif ANY(CORE_IS_XY, CORE_IS_XZ, MARKFORGED_XY, MARKFORGED_YX)
+    #error "DUAL_X_CARRIAGE cannot be used with COREXY, COREYX, COREXZ, COREZX, MARKFORGED_YX, or MARKFORGED_XY."
+  #elif !GOOD_AXIS_PINS(X2)
+    #error "DUAL_X_CARRIAGE requires X2 stepper pins to be defined."
+  #elif !USE_X_MAX
+    #error "DUAL_X_CARRIAGE requires USE_XMAX_PLUG and an X Max Endstop."
+  #elif !defined(X2_HOME_POS) || !defined(X2_MIN_POS) || !defined(X2_MAX_POS)
+    #error "DUAL_X_CARRIAGE requires X2_HOME_POS, X2_MIN_POS, and X2_MAX_POS."
+  #elif X_HOME_TO_MAX || X2_HOME_TO_MIN
+    #error "DUAL_X_CARRIAGE requires X_HOME_DIR -1."
+  #endif
+#endif
+
+#undef GOOD_AXIS_PINS
 
 /**
  * Make sure auto fan pins don't conflict with the fan pin
@@ -2147,6 +2224,83 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
                                                       && _PLUG_UNUSED_TEST(A,U), && _PLUG_UNUSED_TEST(A,V), && _PLUG_UNUSED_TEST(A,W) ) )
 
 // A machine with endstops must have a minimum of 3
+#if HAS_ENDSTOPS
+  #if _AXIS_PLUG_UNUSED_TEST(X)
+    #error "You must enable USE_XMIN_PLUG or USE_XMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(Y)
+    #error "You must enable USE_YMIN_PLUG or USE_YMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(Z)
+    #error "You must enable USE_ZMIN_PLUG or USE_ZMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(I)
+    #error "You must enable USE_IMIN_PLUG or USE_IMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(J)
+    #error "You must enable USE_JMIN_PLUG or USE_JMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(K)
+    #error "You must enable USE_KMIN_PLUG or USE_KMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(U)
+    #error "You must enable USE_UMIN_PLUG or USE_UMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(V)
+    #error "You must enable USE_VMIN_PLUG or USE_VMAX_PLUG."
+  #endif
+  #if _AXIS_PLUG_UNUSED_TEST(W)
+    #error "You must enable USE_WMIN_PLUG or USE_WMAX_PLUG."
+  #endif
+
+  // Delta and Cartesian use 3 homing endstops
+  #if NONE(IS_SCARA, SPI_ENDSTOPS)
+    #if X_HOME_TO_MIN && DISABLED(USE_XMIN_PLUG)
+      #error "Enable USE_XMIN_PLUG when homing X to MIN."
+    #elif X_HOME_TO_MAX && DISABLED(USE_XMAX_PLUG)
+      #error "Enable USE_XMAX_PLUG when homing X to MAX."
+    #elif Y_HOME_TO_MIN && DISABLED(USE_YMIN_PLUG)
+      #error "Enable USE_YMIN_PLUG when homing Y to MIN."
+    #elif Y_HOME_TO_MAX && DISABLED(USE_YMAX_PLUG)
+      #error "Enable USE_YMAX_PLUG when homing Y to MAX."
+    #elif I_HOME_TO_MIN && DISABLED(USE_IMIN_PLUG)
+      #error "Enable USE_IMIN_PLUG when homing I to MIN."
+    #elif I_HOME_TO_MAX && DISABLED(USE_IMAX_PLUG)
+      #error "Enable USE_IMAX_PLUG when homing I to MAX."
+    #elif J_HOME_TO_MIN && DISABLED(USE_JMIN_PLUG)
+      #error "Enable USE_JMIN_PLUG when homing J to MIN."
+    #elif J_HOME_TO_MAX && DISABLED(USE_JMAX_PLUG)
+      #error "Enable USE_JMAX_PLUG when homing J to MAX."
+    #elif K_HOME_TO_MIN && DISABLED(USE_KMIN_PLUG)
+      #error "Enable USE_KMIN_PLUG when homing K to MIN."
+    #elif K_HOME_TO_MAX && DISABLED(USE_KMAX_PLUG)
+      #error "Enable USE_KMAX_PLUG when homing K to MAX."
+    #elif U_HOME_TO_MIN && DISABLED(USE_UMIN_PLUG)
+      #error "Enable USE_UMIN_PLUG when homing U to MIN."
+    #elif U_HOME_TO_MAX && DISABLED(USE_UMAX_PLUG)
+      #error "Enable USE_UMAX_PLUG when homing U to MAX."
+    #elif V_HOME_TO_MIN && DISABLED(USE_VMIN_PLUG)
+      #error "Enable USE_VMIN_PLUG when homing V to MIN."
+    #elif V_HOME_TO_MAX && DISABLED(USE_VMAX_PLUG)
+      #error "Enable USE_VMAX_PLUG when homing V to MAX."
+    #elif W_HOME_TO_MIN && DISABLED(USE_WMIN_PLUG)
+      #error "Enable USE_WMIN_PLUG when homing W to MIN."
+    #elif W_HOME_TO_MAX && DISABLED(USE_WMAX_PLUG)
+      #error "Enable USE_WMAX_PLUG when homing W to MAX."
+    #endif
+  #endif
+
+  // Z homing direction and plug usage flags
+  #if Z_HOME_TO_MIN && NONE(USE_ZMIN_PLUG, HOMING_Z_WITH_PROBE)
+    #error "Enable USE_ZMIN_PLUG when homing Z to MIN."
+  #elif Z_HOME_TO_MAX && ENABLED(USE_PROBE_FOR_Z_HOMING)
+    #error "Z_HOME_DIR must be -1 when homing Z with the probe."
+  #elif ALL(HOMING_Z_WITH_PROBE, Z_MULTI_ENDSTOPS)
+    #error "Z_MULTI_ENDSTOPS is incompatible with USE_PROBE_FOR_Z_HOMING."
+  #elif Z_HOME_TO_MAX && DISABLED(USE_ZMAX_PLUG)
+    #error "Enable USE_ZMAX_PLUG when homing Z to MAX."
+  #endif
+#endif
 
 #if ALL(HOME_Z_FIRST, USE_PROBE_FOR_Z_HOMING)
   #error "HOME_Z_FIRST can't be used when homing Z with a probe."
@@ -2158,6 +2312,24 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
     #error "X_DUAL_ENDSTOPS is not compatible with DELTA."
   #elif !X2_USE_ENDSTOP
     #error "X2_USE_ENDSTOP must be set with X_DUAL_ENDSTOPS."
+  #endif
+#endif
+#if ENABLED(Y_DUAL_ENDSTOPS)
+  #if ENABLED(DELTA)
+    #error "Y_DUAL_ENDSTOPS is not compatible with DELTA."
+  #elif !Y2_USE_ENDSTOP
+    #error "Y2_USE_ENDSTOP must be set with Y_DUAL_ENDSTOPS."
+  #endif
+#endif
+#if ENABLED(Z_MULTI_ENDSTOPS)
+  #if ENABLED(DELTA)
+    #error "Z_MULTI_ENDSTOPS is not compatible with DELTA."
+  #elif !Z2_USE_ENDSTOP
+    #error "Z2_USE_ENDSTOP must be set with Z_MULTI_ENDSTOPS."
+  #elif !Z3_USE_ENDSTOP && NUM_Z_STEPPERS >= 3
+    #error "Z3_USE_ENDSTOP must be set with Z_MULTI_ENDSTOPS and Z3_DRIVER_TYPE."
+  #elif !Z4_USE_ENDSTOP && NUM_Z_STEPPERS >= 4
+    #error "Z4_USE_ENDSTOP must be set with Z_MULTI_ENDSTOPS and Z4_DRIVER_TYPE."
   #endif
 #endif
 
@@ -3107,6 +3279,67 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
  * Check per-axis initializers for errors
  */
 
+#define __PLUS_TEST(I,A) && (sanity_arr_##A[_MIN(I,signed(COUNT(sanity_arr_##A)-1))] > 0)
+#define _PLUS_TEST(A) (1 REPEAT2(14,__PLUS_TEST,A))
+#if HAS_MULTI_EXTRUDER
+  #define _EXTRA_NOTE " (Did you forget to enable DISTINCT_E_FACTORS?)"
+#else
+  #define _EXTRA_NOTE " (Should be " STRINGIFY(NUM_AXES) "+" STRINGIFY(E_STEPPERS) ")"
+#endif
+
+constexpr float sanity_arr_1[] = DEFAULT_AXIS_STEPS_PER_UNIT;
+static_assert(COUNT(sanity_arr_1) >= LOGICAL_AXES,  "DEFAULT_AXIS_STEPS_PER_UNIT requires " _LOGICAL_AXES_STR "elements.");
+static_assert(COUNT(sanity_arr_1) <= DISTINCT_AXES, "DEFAULT_AXIS_STEPS_PER_UNIT has too many elements." _EXTRA_NOTE);
+static_assert(_PLUS_TEST(1), "DEFAULT_AXIS_STEPS_PER_UNIT values must be positive.");
+
+constexpr float sanity_arr_2[] = DEFAULT_MAX_FEEDRATE;
+static_assert(COUNT(sanity_arr_2) >= LOGICAL_AXES,  "DEFAULT_MAX_FEEDRATE requires " _LOGICAL_AXES_STR "elements.");
+static_assert(COUNT(sanity_arr_2) <= DISTINCT_AXES, "DEFAULT_MAX_FEEDRATE has too many elements." _EXTRA_NOTE);
+static_assert(_PLUS_TEST(2), "DEFAULT_MAX_FEEDRATE values must be positive.");
+
+constexpr float sanity_arr_3[] = DEFAULT_MAX_ACCELERATION;
+static_assert(COUNT(sanity_arr_3) >= LOGICAL_AXES,  "DEFAULT_MAX_ACCELERATION requires " _LOGICAL_AXES_STR "elements.");
+static_assert(COUNT(sanity_arr_3) <= DISTINCT_AXES, "DEFAULT_MAX_ACCELERATION has too many elements." _EXTRA_NOTE);
+static_assert(_PLUS_TEST(3), "DEFAULT_MAX_ACCELERATION values must be positive.");
+
+#if NUM_AXES
+  constexpr float sanity_arr_4[] = HOMING_FEEDRATE_MM_M;
+  static_assert(COUNT(sanity_arr_4) == NUM_AXES,  "HOMING_FEEDRATE_MM_M requires " _NUM_AXES_STR "elements (and no others).");
+  static_assert(_PLUS_TEST(4), "HOMING_FEEDRATE_MM_M values must be positive.");
+#endif
+
+#ifdef MAX_ACCEL_EDIT_VALUES
+  constexpr float sanity_arr_5[] = MAX_ACCEL_EDIT_VALUES;
+  static_assert(COUNT(sanity_arr_5) >= LOGICAL_AXES, "MAX_ACCEL_EDIT_VALUES requires " _LOGICAL_AXES_STR "elements.");
+  static_assert(COUNT(sanity_arr_5) <= LOGICAL_AXES, "MAX_ACCEL_EDIT_VALUES has too many elements. " _LOGICAL_AXES_STR "elements only.");
+  static_assert(_PLUS_TEST(5), "MAX_ACCEL_EDIT_VALUES values must be positive.");
+#endif
+
+#ifdef MAX_FEEDRATE_EDIT_VALUES
+  constexpr float sanity_arr_6[] = MAX_FEEDRATE_EDIT_VALUES;
+  static_assert(COUNT(sanity_arr_6) >= LOGICAL_AXES, "MAX_FEEDRATE_EDIT_VALUES requires " _LOGICAL_AXES_STR "elements.");
+  static_assert(COUNT(sanity_arr_6) <= LOGICAL_AXES, "MAX_FEEDRATE_EDIT_VALUES has too many elements. " _LOGICAL_AXES_STR "elements only.");
+  static_assert(_PLUS_TEST(6), "MAX_FEEDRATE_EDIT_VALUES values must be positive.");
+#endif
+
+#ifdef MAX_JERK_EDIT_VALUES
+  constexpr float sanity_arr_7[] = MAX_JERK_EDIT_VALUES;
+  static_assert(COUNT(sanity_arr_7) >= LOGICAL_AXES, "MAX_JERK_EDIT_VALUES requires " _LOGICAL_AXES_STR "elements.");
+  static_assert(COUNT(sanity_arr_7) <= LOGICAL_AXES, "MAX_JERK_EDIT_VALUES has too many elements. " _LOGICAL_AXES_STR "elements only.");
+  static_assert(_PLUS_TEST(7), "MAX_JERK_EDIT_VALUES values must be positive.");
+#endif
+
+#ifdef MANUAL_FEEDRATE
+  constexpr float sanity_arr_8[] = MANUAL_FEEDRATE;
+  static_assert(COUNT(sanity_arr_8) >= LOGICAL_AXES, "MANUAL_FEEDRATE requires " _LOGICAL_AXES_STR "elements.");
+  static_assert(COUNT(sanity_arr_8) <= LOGICAL_AXES, "MANUAL_FEEDRATE has too many elements. " _LOGICAL_AXES_STR "elements only.");
+  static_assert(_PLUS_TEST(8), "MANUAL_FEEDRATE values must be positive.");
+#endif
+
+#undef __PLUS_TEST
+#undef _PLUS_TEST
+#undef _EXTRA_NOTE
+
 #if ALL(CNC_COORDINATE_SYSTEMS, NO_WORKSPACE_OFFSETS)
   #error "CNC_COORDINATE_SYSTEMS is incompatible with NO_WORKSPACE_OFFSETS."
 #endif
@@ -3500,6 +3733,78 @@ static_assert(COUNT(arm) == LOGICAL_AXES, "AXIS_RELATIVE_MODES must contain " _L
 #if ALL(MIXING_EXTRUDER, DISTINCT_E_FACTORS)
   #error "MIXING_EXTRUDER can't be used with DISTINCT_E_FACTORS. But you may use SINGLENOZZLE with DISTINCT_E_FACTORS."
 #endif
+
+/**
+ * Sanity check for valid stepper driver types
+ */
+#define _BAD_DRIVER(A) (defined(A##_DRIVER_TYPE) && !_DRIVER_ID(A##_DRIVER_TYPE))
+#if _BAD_DRIVER(X)
+  #error "X_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(Y)
+  #error "Y_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(Z)
+  #error "Z_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(I)
+  #error "I_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(J)
+  #error "J_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(K)
+  #error "K_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(U)
+  #error "U_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(V)
+  #error "V_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(W)
+  #error "W_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(X2)
+  #error "X2_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(Y2)
+  #error "Y2_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(Z2)
+  #error "Z2_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(Z3)
+  #error "Z3_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(Z4)
+  #error "Z4_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(E0)
+  #error "E0_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(E1)
+  #error "E1_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(E2)
+  #error "E2_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(E3)
+  #error "E3_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(E4)
+  #error "E4_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(E5)
+  #error "E5_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(E6)
+  #error "E6_DRIVER_TYPE is not recognized."
+#endif
+#if _BAD_DRIVER(E7)
+  #error "E7_DRIVER_TYPE is not recognized."
+#endif
+#undef _BAD_DRIVER
 
 /**
  * Require certain features for DGUS_LCD_UI_RELOADED.
