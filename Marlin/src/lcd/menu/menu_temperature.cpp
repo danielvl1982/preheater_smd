@@ -165,45 +165,10 @@ void menu_temperature() {
   BACK_ITEM(MSG_MAIN_MENU);
 
   //
-  // Nozzle:
-  // Nozzle [1-5]:
-  //
-  #if HOTENDS == 1
-    editable.celsius = thermalManager.temp_hotend[0].target;
-    EDIT_ITEM_FAST(int3, MSG_NOZZLE, &editable.celsius, 0, thermalManager.hotend_max_target(0), []{ thermalManager.setTargetHotend(editable.celsius, 0); });
-  #elif HAS_MULTI_HOTEND
-    HOTEND_LOOP() {
-      editable.celsius = thermalManager.temp_hotend[e].target;
-      EDIT_ITEM_FAST_N(int3, e, MSG_NOZZLE_N, &editable.celsius, 0, thermalManager.hotend_max_target(e), []{ thermalManager.setTargetHotend(editable.celsius, MenuItemBase::itemIndex); });
-    }
-  #endif
-
-  #if ENABLED(SINGLENOZZLE_STANDBY_TEMP)
-    for (uint8_t e = 1; e < EXTRUDERS; ++e)
-      EDIT_ITEM_FAST_N(int3, e, MSG_NOZZLE_STANDBY, &thermalManager.singlenozzle_temp[e], 0, thermalManager.hotend_max_target(0));
-  #endif
-
-  //
   // Bed:
   //
   #if HAS_HEATED_BED
     EDIT_ITEM_FAST(int3, MSG_BED, &thermalManager.temp_bed.target, 0, BED_MAX_TARGET, thermalManager.start_watching_bed);
-  #endif
-
-  //
-  // Chamber:
-  //
-  #if HAS_HEATED_CHAMBER
-    EDIT_ITEM_FAST(int3, MSG_CHAMBER, &thermalManager.temp_chamber.target, 0, CHAMBER_MAX_TARGET, thermalManager.start_watching_chamber);
-  #endif
-
-  //
-  // Cooler:
-  //
-  #if HAS_COOLER
-    bool cstate = cooler.enabled;
-    EDIT_ITEM(bool, MSG_COOLER_TOGGLE, &cstate, cooler.toggle);
-    EDIT_ITEM_FAST(int3, MSG_COOLER, &thermalManager.temp_cooler.target, COOLER_MIN_TARGET, COOLER_MAX_TARGET, thermalManager.start_watching_cooler);
   #endif
 
   //
@@ -212,68 +177,6 @@ void menu_temperature() {
   #if ENABLED(FLOWMETER_SAFETY)
     bool fstate = cooler.flowsafety_enabled;
     EDIT_ITEM(bool, MSG_FLOWMETER_SAFETY, &fstate, cooler.flowsafety_toggle);
-  #endif
-
-  //
-  // Fan Speed:
-  //
-  #if HAS_FAN
-
-    DEFINE_SINGLENOZZLE_ITEM();
-
-    #if HAS_FAN0
-      _FAN_EDIT_ITEMS(0, FIRST_FAN_SPEED);
-    #endif
-    #if HAS_FAN1 && REDUNDANT_PART_COOLING_FAN != 1
-      FAN_EDIT_ITEMS(1);
-    #elif SNFAN(1)
-      singlenozzle_item(1);
-    #endif
-    #if HAS_FAN2 && REDUNDANT_PART_COOLING_FAN != 2
-      FAN_EDIT_ITEMS(2);
-    #elif SNFAN(2)
-      singlenozzle_item(2);
-    #endif
-    #if HAS_FAN3 && REDUNDANT_PART_COOLING_FAN != 3
-      FAN_EDIT_ITEMS(3);
-    #elif SNFAN(3)
-      singlenozzle_item(3);
-    #endif
-    #if HAS_FAN4 && REDUNDANT_PART_COOLING_FAN != 4
-      FAN_EDIT_ITEMS(4);
-    #elif SNFAN(4)
-      singlenozzle_item(4);
-    #endif
-    #if HAS_FAN5 && REDUNDANT_PART_COOLING_FAN != 5
-      FAN_EDIT_ITEMS(5);
-    #elif SNFAN(5)
-      singlenozzle_item(5);
-    #endif
-    #if HAS_FAN6 && REDUNDANT_PART_COOLING_FAN != 6
-      FAN_EDIT_ITEMS(6);
-    #elif SNFAN(6)
-      singlenozzle_item(6);
-    #endif
-    #if HAS_FAN7 && REDUNDANT_PART_COOLING_FAN != 7
-      FAN_EDIT_ITEMS(7);
-    #elif SNFAN(7)
-      singlenozzle_item(7);
-    #endif
-
-  #endif // HAS_FAN
-
-  #if HAS_PREHEAT
-    //
-    // Preheat for all Materials
-    //
-    for (uint8_t m = 0; m < PREHEAT_COUNT; ++m) {
-      editable.int8 = m;
-      #if HAS_MULTI_HOTEND || HAS_HEATED_BED
-        SUBMENU_f(ui.get_preheat_label(m), MSG_PREHEAT_M, menu_preheat_m);
-      #elif HAS_HOTEND
-        ACTION_ITEM_f(ui.get_preheat_label(m), MSG_PREHEAT_M, do_preheat_end_m);
-      #endif
-    }
   #endif
 
   #if HAS_TEMP_HOTEND || HAS_HEATED_BED

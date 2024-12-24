@@ -282,36 +282,10 @@ void menu_info() {
   #else
     SUBMENU(MSG_INFO_PRINTER_MENU, menu_info_printer);           // Printer Info >
     SUBMENU(MSG_INFO_BOARD_MENU, menu_info_board);               // Board Info >
-    #if HAS_EXTRUDERS
-      SUBMENU(MSG_INFO_THERMISTOR_MENU, menu_info_thermistors);  // Thermistors >
-    #endif
   #endif
 
   #if ENABLED(PRINTCOUNTER)
     SUBMENU(MSG_INFO_STATS_MENU, menu_info_stats);               // Printer Stats >
-  #endif
-
-  #if HAS_GAMES
-  {
-    #if ENABLED(GAMES_EASTER_EGG)
-      SKIP_ITEM(); SKIP_ITEM(); SKIP_ITEM();
-    #endif
-
-    // Game sub-menu or the individual game
-    SUBMENU(
-      #if HAS_GAME_MENU
-        MSG_GAMES, menu_game
-      #elif ENABLED(MARLIN_BRICKOUT)
-        MSG_BRICKOUT, brickout.enter_game
-      #elif ENABLED(MARLIN_INVADERS)
-        MSG_INVADERS, invaders.enter_game
-      #elif ENABLED(MARLIN_SNAKE)
-        MSG_SNAKE, snake.enter_game
-      #elif ENABLED(MARLIN_MAZE)
-        MSG_MAZE, maze.enter_game
-      #endif
-    );
-  }
   #endif
 
   END_MENU();

@@ -68,21 +68,7 @@
 
 void menu_tune();
 void menu_cancelobject();
-void menu_motion();
 void menu_temperature();
-void menu_configuration();
-
-#if HAS_POWER_MONITOR
-  void menu_power_monitor();
-#endif
-
-#if ENABLED(MIXING_EXTRUDER)
-  void menu_mixer();
-#endif
-
-#if ENABLED(ADVANCED_PAUSE_FEATURE)
-  void menu_change_filament();
-#endif
 
 #if ENABLED(LCD_INFO_MENU)
   void menu_info();
@@ -90,10 +76,6 @@ void menu_configuration();
 
 #if ANY(LED_CONTROL_MENU, CASE_LIGHT_MENU)
   void menu_led();
-#endif
-
-#if HAS_CUTTER
-  void menu_spindle_laser();
 #endif
 
 #if ENABLED(PREHEAT_SHORTCUT_MENU_ITEM)
@@ -323,8 +305,6 @@ void menu_main() {
     #if ENABLED(PREHEAT_SHORTCUT_MENU_ITEM)
       SUBMENU(MSG_PREHEAT_CUSTOM, menu_preheat_only);
     #endif
-
-    SUBMENU(MSG_MOTION, menu_motion);
   }
 
   #if ENABLED(ADVANCED_PAUSE_FEATURE) && (!HAS_ENCODER_WHEEL || ENABLED(DISABLE_ENCODER))
@@ -350,8 +330,6 @@ void menu_main() {
   #if ENABLED(MMU2_MENUS)
     if (!busy) SUBMENU(MSG_MMU2_MENU, menu_mmu2);
   #endif
-
-  SUBMENU(MSG_CONFIGURATION, menu_configuration);
 
   #if ENABLED(CUSTOM_MENU_MAIN)
     if (TERN1(CUSTOM_MENU_MAIN_ONLY_IDLE, !busy)) {

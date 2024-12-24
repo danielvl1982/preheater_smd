@@ -67,7 +67,7 @@
     #define E0_MS2_PIN                        64  // PK2 |        |      | Pin 87 | A10   |
   #endif
   #define E1_MS1_PIN                          57  // PF3 | Pin 94 | A3   | Pin 93 | A3    |
-  #define E1_MS2_PIN                           4  // PG5 | Pin  1 | PWM4 |        | D4    | SERVO3_PIN
+  #define E1_MS2_PIN    c:\dev\preheater.smd\Marlin\src\pins\ramps\pins_RAMPS.h                       4  // PG5 | Pin  1 | PWM4 |        | D4    | SERVO3_PIN
 #endif
 
 #include "pins_RAMPS.h"
